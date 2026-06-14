@@ -7,14 +7,13 @@ package sasl
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/pbkdf2"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"hash"
 	"strconv"
 	"strings"
-
-	"golang.org/x/crypto/pbkdf2"
 )
 
 func scramClientNext(name string, fn func() hash.Hash, m *Negotiator, challenge []byte, data interface{}) (more bool, resp []byte, cache interface{}, err error) {
@@ -125,7 +124,10 @@ func scramClientNext(name string, fn func() hash.Hash, m *Negotiator, challenge 
 		authMessage = append(authMessage, ',')
 		authMessage = append(authMessage, clientFinalMessageWithoutProof...)
 
-		saltedPassword := pbkdf2.Key(password, salt, iter, fn().Size(), fn)
+		saltedPassword, err := pbkdf2.Key(fn, string(password), salt, iter, fn().Size())
+		if err != nil {
+			return false, nil, nil, err
+		}
 
 		h := hmac.New(fn, saltedPassword)
 		_, err = h.Write(serverKeyInput)
