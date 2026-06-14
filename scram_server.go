@@ -7,6 +7,7 @@ package sasl
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/pbkdf2"
 	"crypto/subtle"
 	"crypto/tls"
 	"encoding/base64"
@@ -15,8 +16,6 @@ import (
 	"hash"
 	"strconv"
 	"strings"
-
-	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
@@ -200,10 +199,12 @@ func scramServerNext(name string, fn func() hash.Hash, m *Negotiator, challenge 
 
 // SCRAMSaltPassword calculates salted version of the raw password using
 // fn as hash function, salt and iter as number of iterations.
+// Returns an error if the output size of the hash implementation used is outside of
+// [1, (2^32 - 1) * fn().Size()].
 //
 // See RFC 5802, section 3. SCRAM Algorithm Overview, for implementation details.
-func SCRAMSaltPassword(fn func() hash.Hash, password []byte, salt []byte, iter int) []byte {
-	return pbkdf2.Key(password, salt, iter, fn().Size(), fn)
+func SCRAMSaltPassword(fn func() hash.Hash, password []byte, salt []byte, iter int) ([]byte, error) {
+	return pbkdf2.Key(fn, string(password), salt, iter, fn().Size())
 }
 
 // RFC 5802, section 3. SCRAM Algorithm Overview

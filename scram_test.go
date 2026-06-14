@@ -21,7 +21,10 @@ func TestScram(t *testing.T) {
 		salt := []byte("salt")
 		pass := []byte("123")
 		iter := 123
-		saltedPassword := SCRAMSaltPassword(sha256.New, pass, salt, iter)
+		saltedPassword, err := SCRAMSaltPassword(sha256.New, pass, salt, iter)
+		if err != nil {
+			t.Fatalf("failed to calculate salted version of password: %s", err)
+		}
 		clientCreds := func() (u []byte, p []byte, i []byte) {
 			return []byte("mario"), pass, []byte("")
 		}
@@ -95,7 +98,10 @@ func TestScram(t *testing.T) {
 		salt := []byte("salt")
 		pass := []byte("123")
 		iter := 123
-		saltedPassword := SCRAMSaltPassword(sha256.New, pass, salt, iter)
+		saltedPassword, err := SCRAMSaltPassword(sha256.New, pass, salt, iter)
+		if err != nil {
+			t.Fatalf("failed to calculate salted version of password: %s", err)
+		}
 		clientCreds := func() (u []byte, p []byte, i []byte) {
 			return []byte("mario="), pass, []byte("")
 		}
