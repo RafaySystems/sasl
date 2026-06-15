@@ -51,6 +51,10 @@ type Session struct {
 	pass    unsafe.Pointer
 }
 
+func gsaslFinish(s *C.Gsasl_session) {
+	C.gsasl_finish(s)
+}
+
 // NewClient creates a new gsasl client using the options from a Mellium SASL
 // client.
 func NewClient(m sasl.Mechanism, opts ...sasl.Option) (*Session, error) {
@@ -60,10 +64,6 @@ func NewClient(m sasl.Mechanism, opts ...sasl.Option) (*Session, error) {
 	n := sasl.NewClient(m, opts...)
 	saslCtx := newGSASL()
 	var s *C.Gsasl_session
-	runtime.SetFinalizer(s, func(s *C.Gsasl_session) {
-		C.gsasl_finish(s)
-	})
-
 	cName := C.CString(m.Name)
 	defer C.free(unsafe.Pointer(cName))
 	if rc := C.gsasl_client_start(saslCtx, cName, &s); rc != C.GSASL_OK {
@@ -75,6 +75,7 @@ func NewClient(m sasl.Mechanism, opts ...sasl.Option) (*Session, error) {
 	c := &Session{
 		session: s,
 	}
+	runtime.AddCleanup(c, gsaslFinish, s)
 	return c, nil
 }
 
