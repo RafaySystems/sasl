@@ -1,3 +1,3 @@
 module mellium.im/sasl
 
-go 1.20
+go 1.24
